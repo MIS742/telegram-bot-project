@@ -1,28 +1,37 @@
+import os
 import requests
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    MessageHandler,
+    ContextTypes,
+    filters,
+)
 
-TELEGRAM_TOKEN = "8133872651:AAEMudvAUb7e9wE275H2ca4ikVo6HokD29Y"
-RAPIDAPI_KEY = "3075e723a0mshc801b0c9ebb0305p12e44fjsn0e60031210c6"
+TELEGRAM_TOKEN = os.getenv("BOT_TOKEN")
+RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")
 
-def start(update: Update, context: CallbackContext):
-    update.message.reply_text("Send me your 10-digit PNR number.")
 
-def get_pnr(update: Update, context: CallbackContext):
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Send me your 10-digit PNR number.")
+
+
+async def get_pnr(update: Update, context: ContextTypes.DEFAULT_TYPE):
     pnr = update.message.text
 
     url = f"https://irctc-indian-railway-pnr-status.p.rapidapi.com/getPNRStatus/{pnr}"
 
     headers = {
         "X-RapidAPI-Key": RAPIDAPI_KEY,
-        "X-RapidAPI-Host": "irctc-indian-railway-pnr-status.p.rapidapi.com"
+        "X-RapidAPI-Host": "irctc-indian-railway-pnr-status.p.rapidapi.com",
     }
 
     response = requests.get(url, headers=headers)
     data = response.json()
 
-    if data["success"]:
-        d = data["data"]
+    if data.get("success"):
+        d = data.get("data", {})
 
         train_name = d.get("trainName")
         train_no = d.get("trainNumber")
@@ -31,7 +40,7 @@ def get_pnr(update: Update, context: CallbackContext):
         to_station = d.get("destinationStation")
         boarding = d.get("boardingPoint")
 
-        passenger = d.get("passengerList")[0]
+        passenger = d.get("passengerList", [{}])[0]
         coach = passenger.get("coachPosition")
         seat = passenger.get("berthNo")
         current_status = passenger.get("currentStatus")
@@ -49,20 +58,21 @@ def get_pnr(update: Update, context: CallbackContext):
 📌 Status: {current_status}
 """
 
-        update.message.reply_text(message)
+        await update.message.reply_text(message)
 
     else:
-        update.message.reply_text("Invalid PNR number.")
+        await update.message.reply_text("Invalid PNR number.")
+
 
 def main():
-    updater = Updater(TELEGRAM_TOKEN, use_context=True)
-    dp = updater.dispatcher
+    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, get_pnr))
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, get_pnr))
 
-    updater.start_polling()
-    updater.idle()
+    print("PNR Bot running on Render...")
+    app.run_polling()
+
 
 if __name__ == "__main__":
     main()
