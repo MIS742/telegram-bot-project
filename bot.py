@@ -9,8 +9,8 @@ from telegram.ext import (
     filters,
 )
 
-TELEGRAM_TOKEN = os.getenv("BOT_TOKEN")
-RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")
+TELEGRAM_TOKEN = os.getenv("8133872651:AAEMudvAUb7e9wE275H2ca4ikVo6HokD29Y")
+RAPIDAPI_KEY = os.getenv("3075e723a0mshc801b0c9ebb0305p12e44fjsn0e60031210c6")
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -76,3 +76,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
